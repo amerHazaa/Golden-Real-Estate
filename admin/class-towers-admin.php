@@ -70,12 +70,14 @@ class TowersAdmin {
         echo '<thead><tr><th>الاسم</th><th>المدينة</th><th>عدد الطوابق</th><th>عدد العقارات</th><th>النماذج المتوفرة</th><th>الإجراءات</th></tr></thead>';
         echo '<tbody>';
         foreach ($towers as $tower) {
+            $models = $wpdb->get_results($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_models WHERE tower_id = %d", $tower->ID));
+            $model_names = implode(', ', wp_list_pluck($models, 'name'));
             echo '<tr>';
             echo '<td>' . esc_html($tower->name) . '</td>';
             echo '<td>' . esc_html($tower->city) . '</td>';
             echo '<td>' . esc_html($tower->floors) . '</td>';
             echo '<td>' . esc_html($tower->properties_count) . '</td>';
-            echo '<td>' . esc_html($tower->models) . '</td>';
+            echo '<td>' . esc_html($model_names) . '</td>';
             echo '<td><a href="' . admin_url('admin.php?page=edit_tower&id=' . $tower->ID) . '">تعديل</a> | <a href="' . admin_url('admin-post.php?action=delete_tower&id=' . $tower->ID) . '">حذف</a></td>';
             echo '</tr>';
         }
@@ -138,6 +140,10 @@ class TowersAdmin {
     }
 
     public function delete_tower() {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('عذرًا، غير مسموح لك الوصول إلى هذه الصفحة.'));
+        }
+
         global $wpdb;
 
         $tower_id = intval($_GET['id']);
