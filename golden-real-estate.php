@@ -79,3 +79,12 @@ add_action('init', function() {
     ) $charset_collate;";
     dbDelta($sql);
 });
+
+// كود الإزالة عند إلغاء تثبيت الإضافة
+register_uninstall_hook(__FILE__, 'gre_uninstall_plugin');
+
+function gre_uninstall_plugin() {
+    global $wpdb;
+    $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}gre_properties");
+    $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}gre_towers");
+}
