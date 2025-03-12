@@ -53,7 +53,7 @@ class PropertiesAdmin {
         $query .= " ORDER BY $sort_by";
 
         if ($group_by_model) {
-            $properties = $wpdb->get_results("SELECT model, city, district, price, tower_id, property_code, COUNT(*) as count FROM ($query) as grouped_table GROUP BY model, tower_id");
+            $properties = $wpdb->get_results("SELECT model_id, COUNT(*) as count FROM ($query) as grouped_table GROUP BY model_id");
         } else {
             $properties = $wpdb->get_results($query);
         }
@@ -82,12 +82,13 @@ class PropertiesAdmin {
         echo '</form>';
 
         echo '<table class="wp-list-table widefat fixed striped">';
-        echo '<thead><tr><th>الاسم</th><th>المدينة</th><th>الحي</th><th>السعر</th><th>البرج</th><th>رمز الشقة</th>' . ($group_by_model ? '<th>عدد الشقق</th>' : '<th>الدور</th>') . '<th>الإجراءات</th></tr></thead>';
+        echo '<thead><tr><th>الاسم</th><th>المدينة</th><th>الحي</th><th>السعر</th><th>البرج</th><th>رمز الشقة</th>' . ($group_by_model ? '<th>عدد الشقق</th>' : '<th>الدور</th>') . '</tr></thead>';
         echo '<tbody>';
         foreach ($properties as $property) {
             $tower = $wpdb->get_row($wpdb->prepare("SELECT short_name FROM {$wpdb->prefix}gre_towers WHERE ID = %d", $property->tower_id));
+            $model = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_models WHERE ID = %d", $property->model_id));
             echo '<tr>';
-            echo '<td><a href="' . admin_url('admin.php?page=property_details&id=' . $property->ID) . '">' . esc_html($property->model) . '</a></td>';
+            echo '<td><a href="' . admin_url('admin.php?page=property_details&id=' . $property->ID) . '">' . esc_html($model->name) . '</a></td>';
             echo '<td>' . esc_html($property->city) . '</td>';
             echo '<td>' . esc_html($property->district) . '</td>';
             echo '<td>' . esc_html($property->price) . '</td>';
@@ -98,7 +99,7 @@ class PropertiesAdmin {
             } else {
                 echo '<td>' . esc_html($property->floor) . '</td>';
             }
-            echo '<td><a href="' . admin_url('admin.php?page=edit_property&id=' . $property->ID) . '">تعديل</a> | <a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property->ID), 'delete_property_' . $property->ID) . '">حذف</a></td>';
+            echo '<td><a href="' . admin_url('admin.php?page=edit_property&id=' . $property->ID) . '">تعديل</a> | <a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property->ID), 'delete_property_' . $property->ID) . '" onclick="return confirm(\'هل أنت متأكد؟\');">حذف</a></td>';
             echo '</tr>';
         }
         echo '</tbody>';
@@ -112,18 +113,33 @@ class PropertiesAdmin {
         echo '<input type="hidden" name="action" value="create_property">';
         echo '<label for="property_name">اسم العقار:</label>';
         echo '<input type="text" id="property_name" name="property_name" required><br>';
-        echo '<label for="property_city">المدينة:</label>';
-        echo '<input type="text" id="property_city" name="property_city" required><br>';
-        echo '<label for="property_district">الحي:</label>';
-        echo '<input type="text" id="property_district" name="property_district" required><br>';
-        echo '<label for="property_price">السعر:</label>';
-        echo '<input type="number" id="property_price" name="property_price" required><br>';
+        echo '<label for="property_model">النموذج:</label>';
+        echo '<select id="property_model" name="property_model" required>';
+        global $wpdb;
+        $models = $wpdb->get_results("SELECT ID, name FROM {$wpdb->prefix}gre_models");
+        foreach ($models as $model) {
+            echo '<option value="' . esc_attr($model->ID) . '">' . esc_html($model->name) . '</option>';
+        }
+        echo '</select><br>';
         echo '<label for="property_tower">البرج:</label>';
-        echo '<input type="number" id="property_tower" name="property_tower" required><br>';
+        echo '<select id="property_tower" name="property_tower" required>';
+        $towers = $wpdb->get_results("SELECT ID, name FROM {$wpdb->prefix}gre_towers");
+        foreach ($towers as $tower) {
+            echo '<option value="' . esc_attr($tower->ID) . '">' . esc_html($tower->name) . '</option>';
+        }
+        echo '</select><br>';
         echo '<label for="property_code">رمز الشقة:</label>';
         echo '<input type="text" id="property_code" name="property_code" required><br>';
         echo '<label for="property_floor">الدور:</label>';
         echo '<input type="number" id="property_floor" name="property_floor" required><br>';
+        echo '<label for="property_status">الحالة:</label>';
+        echo '<select id="property_status" name="property_status" required>';
+        echo '<option value="غير جاهزة">غير جاهزة</option>';
+        echo '<option value="قيد التجهيز">قيد التجهيز</option>';
+        echo '<option value="للتشطيب">للتشطيب</option>';
+        echo '<option value="جاهزة">جاهزة</option>';
+        echo '<option value="مباعة">مباعة</option>';
+        echo '</select><br>';
         echo '<input type="submit" value="إضافة عقار" class="button button-primary">';
         echo '</form>';
         echo '</div>';
@@ -140,21 +156,25 @@ class PropertiesAdmin {
             return;
         }
 
+        // جلب تفاصيل النموذج المرتبطة بالشقة
+        $model = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}gre_models WHERE ID = %d", $property->model_id));
+
         echo '<div class="wrap">';
         echo '<h1>تفاصيل الشقة</h1>';
         echo '<p>الاسم: ' . esc_html($property->name) . '</p>';
-        echo '<p>النموذج: ' . esc_html($property->model) . '</p>';
-        echo '<p>المدينة: ' . esc_html($property->city) . '</p>';
-        echo '<p>الحي: ' . esc_html($property->district) . '</p>';
-        echo '<p>السعر: ' . esc_html($property->price) . '</p>';
-        echo '<p>المميزات: ' . esc_html($property->features) . '</p>';
-        echo '<p>الوصف: ' . esc_html($property->description) . '</p>';
-        echo '<p>الصور: ' . esc_html($property->images) . '</p>';
-        echo '<p>الفيديوهات: ' . esc_html($property->videos) . '</p>';
-        echo '<p>الموقع: ' . esc_html($property->location) . '</p>';
+        echo '<p>النموذج: ' . esc_html($model->name) . '</p>';
+        echo '<p>المدينة: ' . esc_html($model->city) . '</p>';
+        echo '<p>الحي: ' . esc_html($model->district) . '</p>';
+        echo '<p>السعر: ' . esc_html($model->price) . '</p>';
+        echo '<p>المميزات: ' . esc_html($model->features) . '</p>';
+        echo '<p>الوصف: ' . esc_html($model->description) . '</p>';
+        echo '<p>الصور: ' . esc_html($model->images) . '</p>';
+        echo '<p>الفيديوهات: ' . esc_html($model->videos) . '</p>';
+        echo '<p>الموقع: ' . esc_html($model->location) . '</p>';
         echo '<p>البرج: ' . esc_html($property->tower_id) . '</p>';
         echo '<p>رمز الشقة: ' . esc_html($property->property_code) . '</p>';
         echo '<p>الدور: ' . esc_html($property->floor) . '</p>';
+        echo '<p>الحالة: ' . esc_html($property->status) . '</p>';
         echo '</div>';
     }
 
@@ -195,9 +215,10 @@ class PropertiesAdmin {
         global $wpdb;
 
         $property_id = intval($_GET['id']);
-        $property = $wpdb->get_row($wpdb->prepare("SELECT model FROM {$wpdb->prefix}gre_properties WHERE ID = %d", $property_id));
+        $property = $wpdb->get_row($wpdb->prepare("SELECT model_id FROM {$wpdb->prefix}gre_properties WHERE ID = %d", $property_id));
         if ($property) {
-            $wpdb->delete($wpdb->prefix . 'gre_properties', array('model' => $property->model));
+            $wpdb->delete($wpdb->prefix . 'gre_properties', array('model_id' => $property->model_id));
+            $wpdb->delete($wpdb->prefix . 'gre_models', array('ID' => $property->model_id));
         }
 
         wp_redirect(admin_url('admin.php?page=gre_properties'));
@@ -218,12 +239,15 @@ class PropertiesAdmin {
             return;
         }
 
+        // جلب تفاصيل النموذج المرتبطة بالشقة
+        $model = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}gre_models WHERE ID = %d", $property->model_id));
+
         include_once plugin_dir_path(__FILE__) . '../includes/class-property-edit.php';
 
         echo '<div class="wrap">';
         echo '<h1>تعديل الشقة</h1>';
         $property_edit = new PropertyEdit();
-        $property_edit->edit_property_form($property);
+        $property_edit->edit_property_form($property, $model);
         echo '</div>';
     }
 }
