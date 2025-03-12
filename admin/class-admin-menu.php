@@ -29,7 +29,7 @@ function gre_register_admin_menu() {
         'gre_add_property', 
         array($propertiesAdmin, 'property_add_page')
     );
-
+    
     add_submenu_page(
         'gre_properties', 
         'إدارة الأبراج', 
