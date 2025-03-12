@@ -41,12 +41,22 @@ class PropertyDisplay {
             return '<p>Property not found.</p>';
         }
 
+        // جلب تفاصيل النموذج المرتبطة بالشقة
+        $model = $this->get_model($property->model_id);
+
         ob_start();
         echo '<div class="property-details">';
         echo '<h1>' . esc_html($property->name) . '</h1>';
         echo '<p>' . esc_html($property->city) . ', ' . esc_html($property->district) . '</p>';
         echo '<p>' . esc_html($property->price) . ' $</p>';
         echo '<p>' . esc_html($property->description) . '</p>';
+        echo '<h2>تفاصيل النموذج</h2>';
+        echo '<p>الاسم: ' . esc_html($model->name) . '</p>';
+        echo '<p>المدينة: ' . esc_html($model->city) . '</p>';
+        echo '<p>الحي: ' . esc_html($model->district) . '</p>';
+        echo '<p>السعر: ' . esc_html($model->price) . ' $</p>';
+        echo '<p>المميزات: ' . esc_html($model->features) . '</p>';
+        echo '<p>الوصف: ' . esc_html($model->description) . '</p>';
         echo '<div class="property-images">';
         $images = explode(',', $property->images);
         foreach ($images as $image) {
@@ -67,6 +77,11 @@ class PropertyDisplay {
         return $this->wpdb->get_row($this->wpdb->prepare("SELECT * FROM $table_name WHERE ID = %d", $id));
     }
 
+    private function get_model($id) {
+        $table_name = $this->wpdb->prefix . 'gre_models';
+        return $this->wpdb->get_row($this->wpdb->prepare("SELECT * FROM $table_name WHERE ID = %d", $id));
+    }
+
     public function property_details_admin($property_id) {
         $property = $this->get_property($property_id);
 
@@ -74,12 +89,22 @@ class PropertyDisplay {
             return '<p>Property not found.</p>';
         }
 
+        // جلب تفاصيل النموذج المرتبطة بالشقة
+        $model = $this->get_model($property->model_id);
+
         ob_start();
         echo '<div class="property-details">';
         echo '<h1>' . esc_html($property->name) . '</h1>';
         echo '<p>' . esc_html($property->city) . ', ' . esc_html($property->district) . '</p>';
         echo '<p>' . esc_html($property->price) . ' $</p>';
         echo '<p>' . esc_html($property->description) . '</p>';
+        echo '<h2>تفاصيل النموذج</h2>';
+        echo '<p>الاسم: ' . esc_html($model->name) . '</p>';
+        echo '<p>المدينة: ' . esc_html($model->city) . '</p>';
+        echo '<p>الحي: ' . esc_html($model->district) . '</p>';
+        echo '<p>السعر: ' . esc_html($model->price) . ' $</p>';
+        echo '<p>المميزات: ' . esc_html($model->features) . '</p>';
+        echo '<p>الوصف: ' . esc_html($model->description) . '</p>';
         echo '<div class="property-images">';
         $images = explode(',', $property->images);
         foreach ($images as $image) {
