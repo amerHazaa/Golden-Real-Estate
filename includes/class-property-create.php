@@ -5,6 +5,7 @@ class PropertyCreate {
     public static function create_property_page() {
         global $wpdb;
         $towers = $wpdb->get_results("SELECT ID, name FROM {$wpdb->prefix}gre_towers");
+        $models = $wpdb->get_results("SELECT ID, name FROM {$wpdb->prefix}gre_models");
 
         echo '<div class="wrap">';
         echo '<h1>إنشاء نموذج شقة جديد</h1>';
@@ -13,7 +14,11 @@ class PropertyCreate {
         echo '<label for="property_name">اسم الشقة:</label>';
         echo '<input type="text" id="property_name" name="property_name" required><br>';
         echo '<label for="property_model">النموذج:</label>';
-        echo '<input type="text" id="property_model" name="property_model" required><br>';
+        echo '<select id="property_model" name="property_model" required>';
+        foreach ($models as $model) {
+            echo '<option value="' . esc_attr($model->ID) . '">' . esc_html($model->name) . '</option>';
+        }
+        echo '</select><br>';
         echo '<label for="property_city">المدينة:</label>';
         echo '<input type="text" id="property_city" name="property_city" required><br>';
         echo '<label for="property_district">الحي:</label>';
@@ -53,7 +58,7 @@ class PropertyCreate {
         global $wpdb;
 
         $property_name = sanitize_text_field($_POST['property_name']);
-        $property_model = sanitize_text_field($_POST['property_model']);
+        $property_model = intval($_POST['property_model']);
         $property_city = sanitize_text_field($_POST['property_city']);
         $property_district = sanitize_text_field($_POST['property_district']);
         $property_price = floatval($_POST['property_price']);
@@ -69,7 +74,7 @@ class PropertyCreate {
         $table_name = $wpdb->prefix . 'gre_properties';
         $wpdb->insert($table_name, array(
             'name' => $property_name,
-            'model' => $property_model,
+            'model_id' => $property_model,
             'city' => $property_city,
             'district' => $property_district,
             'price' => $property_price,
