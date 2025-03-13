@@ -23,64 +23,6 @@ if (is_admin()) {
     require_once plugin_dir_path(__FILE__) . 'admin/class-admin-menu.php';
     require_once plugin_dir_path(__FILE__) . 'admin/class-properties-admin.php';
     require_once plugin_dir_path(__FILE__) . 'admin/class-towers-admin.php';
-
-    // إضافة صفحات إدارة العقارات
-    add_action('admin_menu', function() {
-        add_menu_page(
-            __('Properties', 'golden-real-estate'),
-            __('Properties', 'golden-real-estate'),
-            'manage_options',
-            'gre_properties',
-            ['PropertiesAdmin', 'properties_page'],
-            'dashicons-admin-home',
-            6
-        );
-
-        add_submenu_page(
-            'gre_properties',
-            __('Add Property', 'golden-real-estate'),
-            __('Add Property', 'golden-real-estate'),
-            'manage_options',
-            'add_property',
-            ['PropertiesAdmin', 'property_add_page']
-        );
-
-        add_submenu_page(
-            'gre_properties',
-            __('Property Details', 'golden-real-estate'),
-            __('Property Details', 'golden-real-estate'),
-            'manage_options',
-            'property_details',
-            [new PropertiesAdmin(), 'property_details_page']
-        );
-
-        add_submenu_page(
-            'gre_properties',
-            __('Edit Property', 'golden-real-estate'),
-            __('Edit Property', 'golden-real-estate'),
-            'manage_options',
-            'edit_property',
-            [new PropertiesAdmin(), 'edit_property']
-        );
-
-        add_submenu_page(
-            'gre_properties',
-            __('Manage Towers', 'golden-real-estate'),
-            __('Manage Towers', 'golden-real-estate'),
-            'manage_options',
-            'gre_towers',
-            ['TowersAdmin', 'tower_list_page']
-        );
-
-        add_submenu_page(
-            'gre_properties',
-            __('Add Tower', 'golden-real-estate'),
-            __('Add Tower', 'golden-real-estate'),
-            'manage_options',
-            'add_tower',
-            ['TowersAdmin', 'tower_add_page']
-        );
-    });
 }
 
 // استدعاء ملفات العرض العام
