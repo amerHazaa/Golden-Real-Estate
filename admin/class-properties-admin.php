@@ -85,21 +85,21 @@ class PropertiesAdmin {
         echo '<thead><tr><th>الاسم</th><th>المدينة</th><th>الحي</th><th>السعر</th><th>البرج</th><th>رمز الشقة</th>' . ($group_by_model ? '<th>عدد الشقق</th>' : '<th>الدور</th>') . '<th>الإجراءات</th></tr></thead>';
         echo '<tbody>';
         foreach ($properties as $property) {
-            $tower = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_towers WHERE ID = %d", $property->tower_id));
-            $model = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_models WHERE ID = %d", $property->model_id));
+            $tower = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_towers WHERE ID = %d", isset($property->tower_id) ? $property->tower_id : 0));
+            $model = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_models WHERE ID = %d", isset($property->model_id) ? $property->model_id : 0));
             echo '<tr>';
-            echo '<td><a href="' . admin_url('admin.php?page=property_details&id=' . $property->ID) . '">' . esc_html($model->name) . '</a></td>';
+            echo '<td><a href="' . admin_url('admin.php?page=property_details&id=' . (isset($property->ID) ? $property->ID : 0)) . '">' . esc_html(isset($model->name) ? $model->name : 'غير متوفر') . '</a></td>';
             echo '<td>' . esc_html(isset($property->city) ? $property->city : 'غير متوفر') . '</td>';
             echo '<td>' . esc_html(isset($property->district) ? $property->district : 'غير متوفر') . '</td>';
             echo '<td>' . esc_html(isset($property->price) ? $property->price : 'غير متوفر') . '</td>';
-            echo '<td>' . esc_html($tower->name) . '</td>';
-            echo '<td>' . esc_html($property->property_code) . '</td>';
+            echo '<td>' . esc_html(isset($tower->name) ? $tower->name : 'غير متوفر') . '</td>';
+            echo '<td>' . esc_html(isset($property->property_code) ? $property->property_code : 'غير متوفر') . '</td>';
             if ($group_by_model) {
-                echo '<td>' . esc_html($property->count) . '</td>';
+                echo '<td>' . esc_html(isset($property->count) ? $property->count : 'غير متوفر') . '</td>';
             } else {
-                echo '<td>' . esc_html($property->floor) . '</td>';
+                echo '<td>' . esc_html(isset($property->floor) ? $property->floor : 'غير متوفر') . '</td>';
             }
-            echo '<td><a href="' . admin_url('admin.php?page=edit_property&id=' . $property->ID) . '">تعديل</a> | <a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property->ID), 'delete_property_' . $property->ID) . '">حذف</a></td>';
+            echo '<td><a href="' . admin_url('admin.php?page=edit_property&id=' . (isset($property->ID) ? $property->ID : 0)) . '">تعديل</a> | <a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . (isset($property->ID) ? $property->ID : 0)), 'delete_property_' . (isset($property->ID) ? $property->ID : 0)) . '">حذف</a></td>';
             echo '</tr>';
         }
         echo '</tbody>';
@@ -166,7 +166,7 @@ class PropertiesAdmin {
         echo '<div class="wrap">';
         echo '<h1>تفاصيل الشقة</h1>';
         echo '<p>الاسم: ' . esc_html($property->name) . '</p>';
-        echo '<p>النموذج: ' . esc_html($model->name) . '</p>';
+        echo '<p>النموذج: ' . esc_html(isset($model->name) ? $model->name : 'غير متوفر') . '</p>';
         echo '<p>المدينة: ' . esc_html(isset($model->city) ? $model->city : 'غير متوفر') . '</p>';
         echo '<p>الحي: ' . esc_html(isset($model->district) ? $model->district : 'غير متوفر') . '</p>';
         echo '<p>السعر: ' . esc_html(isset($model->price) ? $model->price : 'غير متوفر') . '</p>';
@@ -175,8 +175,8 @@ class PropertiesAdmin {
         echo '<p>الصور: ' . esc_html($model->images) . '</p>';
         echo '<p>الفيديوهات: ' . esc_html($model->videos) . '</p>';
         echo '<p>الموقع: ' . esc_html($model->location) . '</p>';
-        echo '<p>البرج: ' . esc_html($property->tower_id) . '</p>';
-        echo '<p>رمز الشقة: ' . esc_html($property->property_code) . '</p>';
+        echo '<p>البرج: ' . esc_html(isset($property->tower_id) ? $property->tower_id : 'غير متوفر') . '</p>';
+        echo '<p>رمز الشقة: ' . esc_html(isset($property->property_code) ? $property->property_code : 'غير متوفر') . '</p>';
         echo '<p>الدور: ' . esc_html($property->floor) . '</p>';
         echo '<p>الحالة: ' . esc_html($property->status) . '</p>';
         echo '</div>';
