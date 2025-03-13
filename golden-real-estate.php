@@ -26,41 +26,16 @@ if (is_admin()) {
 
     // إضافة صفحات إدارة العقارات
     add_action('admin_menu', function() {
+        $propertiesAdmin = new PropertiesAdmin();
+        
         add_menu_page(
             __('Properties', 'golden-real-estate'),
             __('Properties', 'golden-real-estate'),
             'manage_options',
             'gre_properties',
-            ['PropertiesAdmin', 'properties_page'],
+            [$propertiesAdmin, 'properties_page'],
             'dashicons-admin-home',
             6
-        );
-
-        add_submenu_page(
-            'gre_properties',
-            __('Add Property', 'golden-real-estate'),
-            __('Add Property', 'golden-real-estate'),
-            'manage_options',
-            'add_property',
-            ['PropertiesAdmin', 'property_add_page']
-        );
-
-        add_submenu_page(
-            'gre_properties',
-            __('Property Details', 'golden-real-estate'),
-            __('Property Details', 'golden-real-estate'),
-            'manage_options',
-            'property_details',
-            ['PropertiesAdmin', 'property_details_page']
-        );
-
-        add_submenu_page(
-            'gre_properties',
-            __('Edit Property', 'golden-real-estate'),
-            __('Edit Property', 'golden-real-estate'),
-            'manage_options',
-            'edit_property',
-            ['PropertiesAdmin', 'edit_property']
         );
     });
 }
