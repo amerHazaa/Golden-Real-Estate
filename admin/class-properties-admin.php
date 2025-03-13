@@ -146,6 +146,10 @@ class PropertiesAdmin {
     }
 
     public function property_details_page() {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('عذرًا، غير مسموح لك الوصول إلى هذه الصفحة.'));
+        }
+
         global $wpdb;
         $property_id = intval($_GET['id']);
         $table_name = $wpdb->prefix . 'gre_properties';
