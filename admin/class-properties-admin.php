@@ -82,24 +82,24 @@ class PropertiesAdmin {
         echo '</form>';
 
         echo '<table class="wp-list-table widefat fixed striped">';
-        echo '<thead><tr><th>الاسم</th><th>المدينة</th><th>الحي</th><th>السعر</th><th>البرج</th><th>رمز الشقة</th>' . ($group_by_model ? '<th>عدد الشقق</th>' : '<th>الدور</th>') . '</tr></thead>';
+        echo '<thead><tr><th>الاسم</th><th>المدينة</th><th>الحي</th><th>السعر</th><th>البرج</th><th>رمز الشقة</th>' . ($group_by_model ? '<th>عدد الشقق</th>' : '<th>الدور</th>') . '<th>الإجراءات</th></tr></thead>';
         echo '<tbody>';
         foreach ($properties as $property) {
-            $tower = $wpdb->get_row($wpdb->prepare("SELECT short_name FROM {$wpdb->prefix}gre_towers WHERE ID = %d", $property->tower_id));
+            $tower = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_towers WHERE ID = %d", $property->tower_id));
             $model = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_models WHERE ID = %d", $property->model_id));
             echo '<tr>';
             echo '<td><a href="' . admin_url('admin.php?page=property_details&id=' . $property->ID) . '">' . esc_html($model->name) . '</a></td>';
             echo '<td>' . esc_html($property->city) . '</td>';
             echo '<td>' . esc_html($property->district) . '</td>';
             echo '<td>' . esc_html($property->price) . '</td>';
-            echo '<td>' . esc_html($tower->short_name) . '</td>';
+            echo '<td>' . esc_html($tower->name) . '</td>';
             echo '<td>' . esc_html($property->property_code) . '</td>';
             if ($group_by_model) {
                 echo '<td>' . esc_html($property->count) . '</td>';
             } else {
                 echo '<td>' . esc_html($property->floor) . '</td>';
             }
-            echo '<td><a href="' . admin_url('admin.php?page=edit_property&id=' . $property->ID) . '">تعديل</a> | <a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property->ID), 'delete_property_' . $property->ID) . '" onclick="return confirm(\'هل أنت متأكد؟\');">حذف</a></td>';
+            echo '<td><a href="' . admin_url('admin.php?page=edit_property&id=' . $property->ID) . '">تعديل</a> | <a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property->ID), 'delete_property_' . $property->ID) . '">حذف</a></td>';
             echo '</tr>';
         }
         echo '</tbody>';
@@ -187,8 +187,8 @@ class PropertiesAdmin {
         echo '<div class="wrap">';
         echo '<h1>تأكيد الحذف</h1>';
         echo '<p>هل تريد حذف هذه الشقة فقط أم حذف النموذج بالكامل؟</p>';
-        echo '<a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property_id), 'delete_property_' . $property_id) . '" class="button button-primary">حذف الشقة فقط</a> ';
-        echo '<a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property_model&id=' . $property_id), 'delete_property_model_' . $property_id) . '" class="button button-primary">حذف النموذج بالكامل</a>';
+        echo '<a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property_id), 'delete_property_' . $property_id) . '" class="button button-primary">حذف الشقة</a>';
+        echo '<a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property_model&id=' . $property_id), 'delete_property_model_' . $property_id) . '" class="button button-primary">حذف النموذج</a>';
         echo '</div>';
     }
 
