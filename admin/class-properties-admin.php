@@ -89,9 +89,9 @@ class PropertiesAdmin {
             $model = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_models WHERE ID = %d", $property->model_id));
             echo '<tr>';
             echo '<td><a href="' . admin_url('admin.php?page=property_details&id=' . $property->ID) . '">' . esc_html($model->name) . '</a></td>';
-            echo '<td>' . esc_html($property->city) . '</td>';
-            echo '<td>' . esc_html($property->district) . '</td>';
-            echo '<td>' . esc_html($property->price) . '</td>';
+            echo '<td>' . esc_html(isset($property->city) ? $property->city : 'غير متوفر') . '</td>';
+            echo '<td>' . esc_html(isset($property->district) ? $property->district : 'غير متوفر') . '</td>';
+            echo '<td>' . esc_html(isset($property->price) ? $property->price : 'غير متوفر') . '</td>';
             echo '<td>' . esc_html($tower->name) . '</td>';
             echo '<td>' . esc_html($property->property_code) . '</td>';
             if ($group_by_model) {
@@ -152,7 +152,7 @@ class PropertiesAdmin {
         $property = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE ID = %d", $property_id));
 
         if (!$property) {
-            echo '<div class="wrap"><h1>الشقة غير موجودة</h1></div>';
+            echo '<div class="wrap'><h1>الشقة غير موجودة</h1></div>';
             return;
         }
 
@@ -163,9 +163,9 @@ class PropertiesAdmin {
         echo '<h1>تفاصيل الشقة</h1>';
         echo '<p>الاسم: ' . esc_html($property->name) . '</p>';
         echo '<p>النموذج: ' . esc_html($model->name) . '</p>';
-        echo '<p>المدينة: ' . esc_html($model->city) . '</p>';
-        echo '<p>الحي: ' . esc_html($model->district) . '</p>';
-        echo '<p>السعر: ' . esc_html($model->price) . '</p>';
+        echo '<p>المدينة: ' . esc_html(isset($model->city) ? $model->city : 'غير متوفر') . '</p>';
+        echo '<p>الحي: ' . esc_html(isset($model->district) ? $model->district : 'غير متوفر') . '</p>';
+        echo '<p>السعر: ' . esc_html(isset($model->price) ? $model->price : 'غير متوفر') . '</p>';
         echo '<p>المميزات: ' . esc_html($model->features) . '</p>';
         echo '<p>الوصف: ' . esc_html($model->description) . '</p>';
         echo '<p>الصور: ' . esc_html($model->images) . '</p>';
