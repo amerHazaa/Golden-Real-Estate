@@ -152,7 +152,7 @@ class PropertiesAdmin {
         $property = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE ID = %d", $property_id));
 
         if (!$property) {
-            echo '<div class="wrap'><h1>الشقة غير موجودة</h1></div>';
+            echo '<div class="wrap"><h1>الشقة غير موجودة</h1></div>';
             return;
         }
 
