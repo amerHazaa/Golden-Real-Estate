@@ -38,6 +38,10 @@ if (is_admin()) {
             6
         );
     });
+
+    // ربط الصفحات بوظائفها
+    add_action('admin_post_property_details', [new PropertiesAdmin(), 'property_details_page']);
+    add_action('admin_post_edit_property', [new PropertiesAdmin(), 'edit_property']);
 }
 
 // استدعاء ملفات العرض العام
