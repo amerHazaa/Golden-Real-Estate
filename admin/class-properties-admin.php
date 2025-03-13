@@ -151,7 +151,7 @@ class PropertiesAdmin {
         }
 
         global $wpdb;
-        $property_id = intval($_GET['id']);
+        $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         $table_name = $wpdb->prefix . 'gre_properties';
         $property = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE ID = %d", $property_id));
 
@@ -187,7 +187,7 @@ class PropertiesAdmin {
             wp_die(__('عذرًا، غير مسموح لك الوصول إلى هذه الصفحة.'));
         }
 
-        $property_id = intval($_GET['id']);
+        $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         echo '<div class="wrap">';
         echo '<h1>تأكيد الحذف</h1>';
         echo '<p>هل تريد حذف هذه الشقة فقط أم حذف النموذج بالكامل؟</p>';
@@ -203,7 +203,7 @@ class PropertiesAdmin {
 
         global $wpdb;
 
-        $property_id = intval($_GET['id']);
+        $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         $table_name = $wpdb->prefix . 'gre_properties';
         $wpdb->delete($table_name, array('ID' => $property_id));
 
@@ -218,7 +218,7 @@ class PropertiesAdmin {
 
         global $wpdb;
 
-        $property_id = intval($_GET['id']);
+        $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         $property = $wpdb->get_row($wpdb->prepare("SELECT model_id FROM {$wpdb->prefix}gre_properties WHERE ID = %d", $property_id));
         if ($property) {
             $wpdb->delete($wpdb->prefix . 'gre_properties', array('model_id' => $property->model_id));
@@ -235,7 +235,7 @@ class PropertiesAdmin {
         }
 
         global $wpdb;
-        $property_id = intval($_GET['id']);
+        $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         $property = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}gre_properties WHERE ID = %d", $property_id));
 
         if (!$property) {
