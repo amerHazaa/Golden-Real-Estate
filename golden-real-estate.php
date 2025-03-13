@@ -80,6 +80,50 @@ add_action('init', function() {
     dbDelta($sql);
 });
 
+// إضافة البيانات التجريبية عند تفعيل الإضافة
+register_activation_hook(__FILE__, 'gre_insert_demo_data');
+
+function gre_insert_demo_data() {
+    global $wpdb;
+
+    // تأكد من وجود بيانات تجريبية في جدول الأبراج
+    $table_name = $wpdb->prefix . 'gre_towers';
+    if ($wpdb->get_var("SELECT COUNT(*) FROM $table_name") == 0) {
+        $wpdb->insert($table_name, ['name' => 'برج تجريبي', 'location' => 'الموقع التجريبي']);
+    }
+
+    // تأكد من وجود بيانات تجريبية في جدول النماذج
+    $table_name = $wpdb->prefix . 'gre_models';
+    if ($wpdb->get_var("SELECT COUNT(*) FROM $table_name") == 0) {
+        $wpdb->insert($table_name, ['name' => 'نموذج تجريبي', 'tower_id' => 1, 'city' => 'المدينة التجريبية', 'district' => 'الحي التجريبي', 'price' => 100000, 'features' => 'ميزات تجريبية', 'description' => 'وصف تجريبي', 'images' => 'صورة1,صورة2', 'videos' => 'فيديو1,فيديو2', 'location' => 'الموقع التجريبي']);
+    }
+
+    // إضافة البيانات التجريبية للعقارات
+    $real_estate = new RealEstate();
+    $demo_properties = [
+        [
+            'name' => 'شقة تجريبية 1',
+            'model_id' => 1,
+            'tower_id' => 1,
+            'property_code' => 'P001',
+            'floor' => 1,
+            'status' => 'متاحة'
+        ],
+        [
+            'name' => 'شقة تجريبية 2',
+            'model_id' => 1,
+            'tower_id' => 1,
+            'property_code' => 'P002',
+            'floor' => 2,
+            'status' => 'متاحة'
+        ]
+    ];
+
+    foreach ($demo_properties as $property) {
+        $real_estate->create_property($property);
+    }
+}
+
 // كود الإزالة عند إلغاء تثبيت الإضافة
 register_uninstall_hook(__FILE__, 'gre_uninstall_plugin');
 
