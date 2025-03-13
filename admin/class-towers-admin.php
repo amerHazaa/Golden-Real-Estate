@@ -74,9 +74,9 @@ class TowersAdmin {
             $model_names = implode(', ', wp_list_pluck($models, 'name'));
             echo '<tr>';
             echo '<td>' . esc_html($tower->name) . '</td>';
-            echo '<td>' . esc_html($tower->city) . '</td>';
-            echo '<td>' . esc_html($tower->floors) . '</td>';
-            echo '<td>' . esc_html($tower->properties_count) . '</td>';
+            echo '<td>' . esc_html(isset($tower->city) ? $tower->city : 'غير متوفر') . '</td>';
+            echo '<td>' . esc_html(isset($tower->floors) ? $tower->floors : 'غير متوفر') . '</td>';
+            echo '<td>' . esc_html(isset($tower->properties_count) ? $tower->properties_count : 'غير متوفر') . '</td>';
             echo '<td>' . esc_html($model_names) . '</td>';
             echo '<td><a href="' . admin_url('admin.php?page=edit_tower&id=' . $tower->ID) . '">تعديل</a> | <a href="' . admin_url('admin-post.php?action=delete_tower&id=' . $tower->ID) . '">حذف</a></td>';
             echo '</tr>';
