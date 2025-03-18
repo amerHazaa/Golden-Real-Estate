@@ -17,17 +17,16 @@ class PropertiesAdmin {
     }
 
     public function properties_page() {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'gre_properties';
+        $properties = $this->get_all_properties();
 
         // التحقق من خيار التجميع
         $group_by_model = isset($_GET['group_by_model']) ? true : false;
 
         // التحقق من خيار الفرز
-        $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : 'name';
-        $allowed_sort_by = ['name', 'city', 'price'];
+        $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : 'title';
+        $allowed_sort_by = ['title', 'city', 'price'];
         if (!in_array($sort_by, $allowed_sort_by)) {
-            $sort_by = 'name';
+            $sort_by = 'title';
         }
 
         // التحقق من خيار الفلترة
@@ -39,24 +38,24 @@ class PropertiesAdmin {
         }
 
         // استعلام جلب البيانات
-        $query = "SELECT * FROM $table_name";
-        $query_conditions = [];
+        $query_args = [
+            'post_type' => 'property',
+            'orderby' => $sort_by,
+            'order' => 'ASC',
+            'posts_per_page' => -1
+        ];
 
         if ($filter_column && $filter_value) {
-            $query_conditions[] = $wpdb->prepare("$filter_column LIKE %s", '%' . $filter_value . '%');
+            $query_args['meta_query'] = [
+                [
+                    'key' => '_' . $filter_column,
+                    'value' => $filter_value,
+                    'compare' => 'LIKE'
+                ]
+            ];
         }
 
-        if ($query_conditions) {
-            $query .= ' WHERE ' . implode(' AND ', $query_conditions);
-        }
-
-        $query .= " ORDER BY $sort_by";
-
-        if ($group_by_model) {
-            $properties = $wpdb->get_results("SELECT model_id, COUNT(*) as count FROM ($query) as grouped_table GROUP BY model_id");
-        } else {
-            $properties = $wpdb->get_results($query);
-        }
+        $properties = get_posts($query_args);
 
         echo '<div class="wrap">';
         echo '<h1>إدارة العقارات</h1>';
@@ -67,7 +66,7 @@ class PropertiesAdmin {
         echo '<label><input type="checkbox" name="group_by_model" ' . ($group_by_model ? 'checked' : '') . '> تجميع الشقق من نفس النموذج</label><br>';
         echo '<label>فرز حسب: </label>';
         echo '<select name="sort_by">';
-        echo '<option value="name"' . ('name' === $sort_by ? ' selected' : '') . '>الاسم</option>';
+        echo '<option value="title"' . ('title' === $sort_by ? ' selected' : '') . '>الاسم</option>';
         echo '<option value="city"' . ('city' === $sort_by ? ' selected' : '') . '>المدينة</option>';
         echo '<option value="price"' . ('price' === $sort_by ? ' selected' : '') . '>السعر</option>';
         echo '</select><br>';
@@ -85,21 +84,26 @@ class PropertiesAdmin {
         echo '<thead><tr><th>الاسم</th><th>المدينة</th><th>الحي</th><th>السعر</th><th>البرج</th><th>رمز الشقة</th>' . ($group_by_model ? '<th>عدد الشقق</th>' : '<th>الدور</th>') . '<th>الإجراءات</th></tr></thead>';
         echo '<tbody>';
         foreach ($properties as $property) {
-            $tower = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_towers WHERE ID = %d", isset($property->tower_id) ? $property->tower_id : 0));
-            $model = $wpdb->get_row($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_models WHERE ID = %d", isset($property->model_id) ? $property->model_id : 0));
+            $property_id = $property->ID;
+            $tower_id = get_post_meta($property_id, '_tower_id', true);
+            $model_id = get_post_meta($property_id, '_model_id', true);
+
+            $tower = get_post($tower_id);
+            $model = get_post($model_id);
+
             echo '<tr>';
-            echo '<td><a href="' . admin_url('admin.php?page=property_details&id=' . (isset($property->ID) ? $property->ID : 0)) . '">' . esc_html(isset($model->name) ? $model->name : 'غير متوفر') . '</a></td>';
-            echo '<td>' . esc_html(isset($property->city) ? $property->city : 'غير متوفر') . '</td>';
-            echo '<td>' . esc_html(isset($property->district) ? $property->district : 'غير متوفر') . '</td>';
-            echo '<td>' . esc_html(isset($property->price) ? $property->price : 'غير متوفر') . '</td>';
-            echo '<td>' . esc_html(isset($tower->name) ? $tower->name : 'غير متوفر') . '</td>';
-            echo '<td>' . esc_html(isset($property->property_code) ? $property->property_code : 'غير متوفر') . '</td>';
+            echo '<td><a href="' . admin_url('admin.php?page=property_details&id=' . $property_id) . '">' . esc_html($property->post_title) . '</a></td>';
+            echo '<td>' . esc_html(get_post_meta($property_id, '_city', true)) . '</td>';
+            echo '<td>' . esc_html(get_post_meta($property_id, '_district', true)) . '</td>';
+            echo '<td>' . esc_html(get_post_meta($property_id, '_price', true)) . ' $</td>';
+            echo '<td>' . esc_html($tower ? $tower->post_title : 'غير متوفر') . '</td>';
+            echo '<td>' . esc_html(get_post_meta($property_id, '_property_code', true)) . '</td>';
             if ($group_by_model) {
-                echo '<td>' . esc_html(isset($property->count) ? $property->count : 'غير متوفر') . '</td>';
+                echo '<td>' . esc_html($this->get_property_count_by_model($model_id)) . '</td>';
             } else {
-                echo '<td>' . esc_html(isset($property->floor) ? $property->floor : 'غير متوفر') . '</td>';
+                echo '<td>' . esc_html(get_post_meta($property_id, '_floor', true)) . '</td>';
             }
-            echo '<td><a href="' . admin_url('admin.php?page=edit_property&id=' . (isset($property->ID) ? $property->ID : 0)) . '">تعديل</a> | <a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . (isset($property->ID) ? $property->ID : 0)), 'delete_property_' . (isset($property->ID) ? $property->ID : 0)) . '">حذف</a></td>';
+            echo '<td><a href="' . admin_url('admin.php?page=edit_property&id=' . $property_id) . '">تعديل</a> | <a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property_id), 'delete_property_' . $property_id) . '">حذف</a></td>';
             echo '</tr>';
         }
         echo '</tbody>';
@@ -115,17 +119,16 @@ class PropertiesAdmin {
         echo '<input type="text" id="property_name" name="property_name" required><br>';
         echo '<label for="property_model">النموذج:</label>';
         echo '<select id="property_model" name="property_model" required>';
-        global $wpdb;
-        $models = $wpdb->get_results("SELECT ID, name FROM {$wpdb->prefix}gre_models");
+        $models = get_posts(['post_type' => 'model', 'posts_per_page' => -1]);
         foreach ($models as $model) {
-            echo '<option value="' . esc_attr($model->ID) . '">' . esc_html($model->name) . '</option>';
+            echo '<option value="' . esc_attr($model->ID) . '">' . esc_html($model->post_title) . '</option>';
         }
         echo '</select><br>';
         echo '<label for="property_tower">البرج:</label>';
         echo '<select id="property_tower" name="property_tower" required>';
-        $towers = $wpdb->get_results("SELECT ID, name FROM {$wpdb->prefix}gre_towers");
+        $towers = get_posts(['post_type' => 'tower', 'posts_per_page' => -1]);
         foreach ($towers as $tower) {
-            echo '<option value="' . esc_attr($tower->ID) . '">' . esc_html($tower->name) . '</option>';
+            echo '<option value="' . esc_attr($tower->ID) . '">' . esc_html($tower->post_title) . '</option>';
         }
         echo '</select><br>';
         echo '<label for="property_code">رمز الشقة:</label>';
@@ -150,35 +153,34 @@ class PropertiesAdmin {
             wp_die(__('عذرًا، غير مسموح لك الوصول إلى هذه الصفحة.'));
         }
 
-        global $wpdb;
         $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        $table_name = $wpdb->prefix . 'gre_properties';
-        $property = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE ID = %d", $property_id));
+        $property = get_post($property_id);
 
-        if (!$property) {
+        if (!$property || $property->post_type !== 'property') {
             echo '<div class="wrap"><h1>الشقة غير موجودة</h1></div>';
             return;
         }
 
         // جلب تفاصيل النموذج المرتبطة بالشقة
-        $model = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}gre_models WHERE ID = %d", $property->model_id));
+        $model_id = get_post_meta($property_id, '_model_id', true);
+        $model = get_post($model_id);
 
         echo '<div class="wrap">';
         echo '<h1>تفاصيل الشقة</h1>';
-        echo '<p>الاسم: ' . esc_html($property->name) . '</p>';
-        echo '<p>النموذج: ' . esc_html(isset($model->name) ? $model->name : 'غير متوفر') . '</p>';
-        echo '<p>المدينة: ' . esc_html(isset($model->city) ? $model->city : 'غير متوفر') . '</p>';
-        echo '<p>الحي: ' . esc_html(isset($model->district) ? $model->district : 'غير متوفر') . '</p>';
-        echo '<p>السعر: ' . esc_html(isset($model->price) ? $model->price : 'غير متوفر') . '</p>';
-        echo '<p>المميزات: ' . esc_html($model->features) . '</p>';
-        echo '<p>الوصف: ' . esc_html($model->description) . '</p>';
-        echo '<p>الصور: ' . esc_html($model->images) . '</p>';
-        echo '<p>الفيديوهات: ' . esc_html($model->videos) . '</p>';
-        echo '<p>الموقع: ' . esc_html($model->location) . '</p>';
-        echo '<p>البرج: ' . esc_html(isset($property->tower_id) ? $property->tower_id : 'غير متوفر') . '</p>';
-        echo '<p>رمز الشقة: ' . esc_html(isset($property->property_code) ? $property->property_code : 'غير متوفر') . '</p>';
-        echo '<p>الدور: ' . esc_html($property->floor) . '</p>';
-        echo '<p>الحالة: ' . esc_html($property->status) . '</p>';
+        echo '<p>الاسم: ' . esc_html($property->post_title) . '</p>';
+        echo '<p>النموذج: ' . esc_html($model ? $model->post_title : 'غير متوفر') . '</p>';
+        echo '<p>المدينة: ' . esc_html(get_post_meta($model->ID, '_city', true)) . '</p>';
+        echo '<p>الحي: ' . esc_html(get_post_meta($model->ID, '_district', true)) . '</p>';
+        echo '<p>السعر: ' . esc_html(get_post_meta($model->ID, '_price', true)) . ' $</p>';
+        echo '<p>المميزات: ' . esc_html(get_post_meta($model->ID, '_features', true)) . '</p>';
+        echo '<p>الوصف: ' . esc_html($model->post_content) . '</p>';
+        echo '<p>الصور: ' . esc_html(get_post_meta($property_id, '_images', true)) . '</p>';
+        echo '<p>الفيديوهات: ' . esc_html(get_post_meta($property_id, '_videos', true)) . '</p>';
+        echo '<p>الموقع: ' . esc_html(get_post_meta($model->ID, '_location', true)) . '</p>';
+        echo '<p>البرج: ' . esc_html(get_post_meta($property_id, '_tower_id', true)) . '</p>';
+        echo '<p>رمز الشقة: ' . esc_html(get_post_meta($property_id, '_property_code', true)) . '</p>';
+        echo '<p>الدور: ' . esc_html(get_post_meta($property_id, '_floor', true)) . '</p>';
+        echo '<p>الحالة: ' . esc_html(get_post_meta($property_id, '_status', true)) . '</p>';
         echo '</div>';
     }
 
@@ -201,11 +203,8 @@ class PropertiesAdmin {
             wp_die(__('عذرًا، غير مسموح لك الوصول إلى هذه الصفحة.'));
         }
 
-        global $wpdb;
-
         $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        $table_name = $wpdb->prefix . 'gre_properties';
-        $wpdb->delete($table_name, array('ID' => $property_id));
+        wp_delete_post($property_id, true);
 
         wp_redirect(admin_url('admin.php?page=gre_properties'));
         exit;
@@ -216,13 +215,14 @@ class PropertiesAdmin {
             wp_die(__('عذرًا، غير مسموح لك الوصول إلى هذه الصفحة.'));
         }
 
-        global $wpdb;
-
         $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        $property = $wpdb->get_row($wpdb->prepare("SELECT model_id FROM {$wpdb->prefix}gre_properties WHERE ID = %d", $property_id));
-        if ($property) {
-            $wpdb->delete($wpdb->prefix . 'gre_properties', array('model_id' => $property->model_id));
-            $wpdb->delete($wpdb->prefix . 'gre_models', array('ID' => $property->model_id));
+        $model_id = get_post_meta($property_id, '_model_id', true);
+        if ($model_id) {
+            $properties = get_posts(['post_type' => 'property', 'meta_key' => '_model_id', 'meta_value' => $model_id, 'posts_per_page' => -1]);
+            foreach ($properties as $property) {
+                wp_delete_post($property->ID, true);
+            }
+            wp_delete_post($model_id, true);
         }
 
         wp_redirect(admin_url('admin.php?page=gre_properties'));
@@ -234,17 +234,17 @@ class PropertiesAdmin {
             wp_die(__('عذرًا، غير مسموح لك الوصول إلى هذه الصفحة.'));
         }
 
-        global $wpdb;
         $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        $property = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}gre_properties WHERE ID = %d", $property_id));
+        $property = get_post($property_id);
 
-        if (!$property) {
+        if (!$property || $property->post_type !== 'property') {
             echo '<div class="wrap"><h1>الشقة غير موجودة</h1></div>';
             return;
         }
 
         // جلب تفاصيل النموذج المرتبطة بالشقة
-        $model = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}gre_models WHERE ID = %d", $property->model_id));
+        $model_id = get_post_meta($property_id, '_model_id', true);
+        $model = get_post($model_id);
 
         include_once plugin_dir_path(__FILE__) . '../includes/class-property-edit.php';
 
@@ -253,6 +253,25 @@ class PropertiesAdmin {
         $property_edit = new PropertyEdit();
         $property_edit->edit_property_form($property, $model);
         echo '</div>';
+    }
+
+    private function get_all_properties() {
+        $args = array(
+            'post_type' => 'property',
+            'posts_per_page' => -1
+        );
+        return get_posts($args);
+    }
+
+    private function get_property_count_by_model($model_id) {
+        $args = array(
+            'post_type' => 'property',
+            'meta_key' => '_model_id',
+            'meta_value' => $model_id,
+            'posts_per_page' => -1
+        );
+        $properties = get_posts($args);
+        return count($properties);
     }
 }
 
