@@ -11,14 +11,11 @@ class TowersAdmin {
     }
 
     public function tower_list_page() {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'gre_towers';
-
         // التحقق من خيار الفرز
-        $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : 'name';
-        $allowed_sort_by = ['name', 'city', 'floors'];
+        $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : 'title';
+        $allowed_sort_by = ['title', 'city', 'floors'];
         if (!in_array($sort_by, $allowed_sort_by)) {
-            $sort_by = 'name';
+            $sort_by = 'title';
         }
 
         // التحقق من خيار الفلترة
@@ -30,20 +27,24 @@ class TowersAdmin {
         }
 
         // استعلام جلب البيانات
-        $query = "SELECT * FROM $table_name";
-        $query_conditions = [];
+        $query_args = [
+            'post_type' => 'tower',
+            'orderby' => $sort_by,
+            'order' => 'ASC',
+            'posts_per_page' => -1
+        ];
 
         if ($filter_column && $filter_value) {
-            $query_conditions[] = $wpdb->prepare("$filter_column LIKE %s", '%' . $filter_value . '%');
+            $query_args['meta_query'] = [
+                [
+                    'key' => '_' . $filter_column,
+                    'value' => $filter_value,
+                    'compare' => 'LIKE'
+                ]
+            ];
         }
 
-        if ($query_conditions) {
-            $query .= ' WHERE ' . implode(' AND ', $query_conditions);
-        }
-
-        $query .= " ORDER BY $sort_by";
-
-        $towers = $wpdb->get_results($query);
+        $towers = get_posts($query_args);
 
         echo '<div class="wrap">';
         echo '<h1>إدارة الأبراج</h1>';
@@ -53,7 +54,7 @@ class TowersAdmin {
         echo '<input type="hidden" name="page" value="gre_towers">';
         echo '<label>فرز حسب: </label>';
         echo '<select name="sort_by">';
-        echo '<option value="name"' . ('name' === $sort_by ? ' selected' : '') . '>الاسم</option>';
+        echo '<option value="title"' . ('title' === $sort_by ? ' selected' : '') . '>الاسم</option>';
         echo '<option value="city"' . ('city' === $sort_by ? ' selected' : '') . '>المدينة</option>';
         echo '<option value="floors"' . ('floors' === $sort_by ? ' selected' : '') . '>عدد الطوابق</option>';
         echo '</select><br>';
@@ -70,13 +71,13 @@ class TowersAdmin {
         echo '<thead><tr><th>الاسم</th><th>المدينة</th><th>عدد الطوابق</th><th>عدد العقارات</th><th>النماذج المتوفرة</th><th>الإجراءات</th></tr></thead>';
         echo '<tbody>';
         foreach ($towers as $tower) {
-            $models = $wpdb->get_results($wpdb->prepare("SELECT name FROM {$wpdb->prefix}gre_models WHERE tower_id = %d", $tower->ID));
-            $model_names = implode(', ', wp_list_pluck($models, 'name'));
+            $models = get_posts(['post_type' => 'model', 'meta_key' => '_tower_id', 'meta_value' => $tower->ID, 'posts_per_page' => -1]);
+            $model_names = implode(', ', wp_list_pluck($models, 'post_title'));
             echo '<tr>';
-            echo '<td>' . esc_html($tower->name) . '</td>';
-            echo '<td>' . esc_html(isset($tower->city) ? $tower->city : 'غير متوفر') . '</td>';
-            echo '<td>' . esc_html(isset($tower->floors) ? $tower->floors : 'غير متوفر') . '</td>';
-            echo '<td>' . esc_html(isset($tower->properties_count) ? $tower->properties_count : 'غير متوفر') . '</td>';
+            echo '<td>' . esc_html($tower->post_title) . '</td>';
+            echo '<td>' . esc_html(get_post_meta($tower->ID, '_city', true)) . '</td>';
+            echo '<td>' . esc_html(get_post_meta($tower->ID, '_floors', true)) . '</td>';
+            echo '<td>' . esc_html(get_post_meta($tower->ID, '_properties_count', true)) . '</td>';
             echo '<td>' . esc_html($model_names) . '</td>';
             echo '<td><a href="' . admin_url('admin.php?page=edit_tower&id=' . $tower->ID) . '">تعديل</a> | <a href="' . admin_url('admin-post.php?action=delete_tower&id=' . $tower->ID) . '">حذف</a></td>';
             echo '</tr>';
@@ -98,45 +99,79 @@ class TowersAdmin {
         echo '<input type="number" id="tower_floors" name="tower_floors" required><br>';
         echo '<label for="tower_properties_count">عدد العقارات:</label>';
         echo '<input type="number" id="tower_properties_count" name="tower_properties_count" required><br>';
-        echo '<label for="tower_image">صورة البرج (رابط):</label>';
-        echo '<input type="text" id="tower_image" name="tower_image" required><br>';
-        echo '<label for="tower_short_name">الاسم المختصر:</label>';
-        echo '<input type="text" id="tower_short_name" name="tower_short_name" required><br>';
-        echo '<label for="tower_models">النماذج المتوفرة (مفصولة بفاصلة):</label>';
-        echo '<input type="text" id="tower_models" name="tower_models" required><br>';
         echo '<input type="submit" value="إنشاء برج" class="button button-primary">';
         echo '</form>';
         echo '</div>';
     }
 
     public function create_tower() {
-        global $wpdb;
+        $post_data = [
+            'post_title'    => sanitize_text_field($_POST['tower_name']),
+            'post_type'     => 'tower',
+            'post_status'   => 'publish'
+        ];
 
-        $tower_name = sanitize_text_field($_POST['tower_name']);
-        $tower_city = sanitize_text_field($_POST['tower_city']);
-        $tower_floors = intval($_POST['tower_floors']);
-        $tower_properties_count = intval($_POST['tower_properties_count']);
-        $tower_image = esc_url_raw($_POST['tower_image']);
-        $tower_short_name = sanitize_text_field($_POST['tower_short_name']);
-        $tower_models = sanitize_text_field($_POST['tower_models']);
+        $tower_id = wp_insert_post($post_data);
 
-        $table_name = $wpdb->prefix . 'gre_towers';
-        $wpdb->insert($table_name, array(
-            'name' => $tower_name,
-            'city' => $tower_city,
-            'floors' => $tower_floors,
-            'properties_count' => $tower_properties_count,
-            'image' => $tower_image,
-            'short_name' => $tower_short_name,
-            'models' => $tower_models
-        ));
+        if (!is_wp_error($tower_id)) {
+            update_post_meta($tower_id, '_city', sanitize_text_field($_POST['tower_city']));
+            update_post_meta($tower_id, '_floors', intval($_POST['tower_floors']));
+            update_post_meta($tower_id, '_properties_count', intval($_POST['tower_properties_count']));
+        }
 
         wp_redirect(admin_url('admin.php?page=gre_towers'));
         exit;
     }
 
     public function update_tower() {
-        // كود التحديث
+        if (!current_user_can('manage_options')) {
+            wp_die(__('عذرًا، غير مسموح لك الوصول إلى هذه الصفحة.'));
+        }
+
+        $tower_id = intval($_GET['id']);
+        $tower = get_post($tower_id);
+
+        if (!$tower || $tower->post_type !== 'tower') {
+            wp_die(__('عذرًا، غير مسموح لك الوصول إلى هذه الصفحة.'));
+        }
+
+        echo '<div class="wrap">';
+        echo '<h1>تعديل برج: ' . esc_html($tower->post_title) . '</h1>';
+        echo '<form action="' . admin_url('admin-post.php') . '" method="POST">';
+        echo '<input type="hidden" name="action" value="save_tower">';
+        echo '<input type="hidden" name="tower_id" value="' . esc_attr($tower_id) . '">';
+        echo '<label for="tower_name">اسم البرج:</label>';
+        echo '<input type="text" id="tower_name" name="tower_name" value="' . esc_attr($tower->post_title) . '" required><br>';
+        echo '<label for="tower_city">المدينة:</label>';
+        echo '<input type="text" id="tower_city" name="tower_city" value="' . esc_attr(get_post_meta($tower_id, '_city', true)) . '" required><br>';
+        echo '<label for="tower_floors">عدد الطوابق:</label>';
+        echo '<input type="number" id="tower_floors" name="tower_floors" value="' . esc_attr(get_post_meta($tower_id, '_floors', true)) . '" required><br>';
+        echo '<label for="tower_properties_count">عدد العقارات:</label>';
+        echo '<input type="number" id="tower_properties_count" name="tower_properties_count" value="' . esc_attr(get_post_meta($tower_id, '_properties_count', true)) . '" required><br>';
+        echo '<input type="submit" value="تحديث البرج" class="button button-primary">';
+        echo '</form>';
+        echo '</div>';
+    }
+
+    public function save_tower() {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('عذرًا، غير مسموح لك الوصول إلى هذه الصفحة.'));
+        }
+
+        $tower_id = intval($_POST['tower_id']);
+        $post_data = [
+            'ID'           => $tower_id,
+            'post_title'   => sanitize_text_field($_POST['tower_name']),
+        ];
+
+        wp_update_post($post_data);
+
+        update_post_meta($tower_id, '_city', sanitize_text_field($_POST['tower_city']));
+        update_post_meta($tower_id, '_floors', intval($_POST['tower_floors']));
+        update_post_meta($tower_id, '_properties_count', intval($_POST['tower_properties_count']));
+
+        wp_redirect(admin_url('admin.php?page=gre_towers'));
+        exit;
     }
 
     public function delete_tower() {
@@ -144,11 +179,8 @@ class TowersAdmin {
             wp_die(__('عذرًا، غير مسموح لك الوصول إلى هذه الصفحة.'));
         }
 
-        global $wpdb;
-
         $tower_id = intval($_GET['id']);
-        $table_name = $wpdb->prefix . 'gre_towers';
-        $wpdb->delete($table_name, array('ID' => $tower_id));
+        wp_delete_post($tower_id, true);
 
         wp_redirect(admin_url('admin.php?page=gre_towers'));
         exit;
