@@ -81,7 +81,7 @@ class PropertiesAdmin {
         echo '</form>';
 
         echo '<table class="wp-list-table widefat fixed striped">';
-        echo '<thead><tr><th>الاسم</th><th>المدينة</th><th>الحي</th><th>السعر</th><th>البرج</th><th>رمز الشقة</th>' . ($group_by_model ? '<th>عدد الشقق</th>' : '<th>الدور</th>') . '<th>الإجراءات</th></tr></thead>';
+        echo '<thead><tr><th>الاسم</th><th>المدينة</th><th>الحي</th><th>السعر</th><th>البرج</th><th>رمز الشقة</th>' . ($group_by_model ? '<th>عدد الشقق</th>' : '<th>الدور</th>') . '<th>إجراءات</th></tr></thead>';
         echo '<tbody>';
         foreach ($properties as $property) {
             $property_id = $property->ID;
@@ -103,7 +103,7 @@ class PropertiesAdmin {
             } else {
                 echo '<td>' . esc_html(get_post_meta($property_id, '_floor', true)) . '</td>';
             }
-            echo '<td><a href="' . admin_url('admin.php?page=edit_property&id=' . $property_id) . '">تعديل</a> | <a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property_id), 'delete_property_' . $property_id) . '">حذف</a></td>';
+            echo '<td><a href="' . admin_url('admin.php?page=edit_property&id=' . $property_id) . '">تعديل</a> | <a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property_id), 'delete_property_' . $property_id) . '" onclick="return confirm(\'هل أنت متأكد من حذف هذه الشقة؟\');">حذف</a></td>';
             echo '</tr>';
         }
         echo '</tbody>';
@@ -193,8 +193,8 @@ class PropertiesAdmin {
         echo '<div class="wrap">';
         echo '<h1>تأكيد الحذف</h1>';
         echo '<p>هل تريد حذف هذه الشقة فقط أم حذف النموذج بالكامل؟</p>';
-        echo '<a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property_id), 'delete_property_' . $property_id) . '" class="button button-primary">حذف الشقة</a>';
-        echo '<a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property_model&id=' . $property_id), 'delete_property_model_' . $property_id) . '" class="button button-primary">حذف النموذج</a>';
+        echo '<a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property&id=' . $property_id), 'delete_property_' . $property_id) . '" class="button button-primary">حذف الشقة فقط</a>';
+        echo '<a href="' . wp_nonce_url(admin_url('admin-post.php?action=delete_property_model&id=' . $property_id), 'delete_property_model_' . $property_id) . '" class="button button-primary">حذف النموذج بالكامل</a>';
         echo '</div>';
     }
 
