@@ -14,7 +14,7 @@ function gre_save_custom_meta_data($post_id) {
     }
 
     // تحقق من نوع المقالة
-    if ('property' == $_POST['post_type']) {
+    if (isset($_POST['post_type']) && 'property' == $_POST['post_type']) {  // إضافة تحقق من وجود post_type
         // حفظ البيانات المخصصة
         update_post_meta($post_id, '_city', sanitize_text_field($_POST['city']));
         update_post_meta($post_id, '_district', sanitize_text_field($_POST['district']));
