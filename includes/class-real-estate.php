@@ -1,36 +1,26 @@
 <?php
-// ملف إدارة العقارات
 
 class RealEstate {
-    private $wpdb;
+    public function create_property($property_data) {
+        $post_data = [
+            'post_title'    => $property_data['name'],
+            'post_content'  => isset($property_data['description']) ? $property_data['description'] : '',
+            'post_status'   => 'publish',
+            'post_type'     => 'property',
+        ];
 
-    public function __construct() {
-        global $wpdb;
-        $this->wpdb = $wpdb;
-    }
+        $property_id = wp_insert_post($post_data);
 
-    public function create_property($data) {
-        $table_name = $this->wpdb->prefix . 'gre_properties';
-        $this->wpdb->insert($table_name, $data);
-    }
+        if (!is_wp_error($property_id)) {
+            update_post_meta($property_id, '_model_id', $property_data['model_id']);
+            update_post_meta($property_id, '_tower_id', $property_data['tower_id']);
+            update_post_meta($property_id, '_property_code', $property_data['property_code']);
+            update_post_meta($property_id, '_floor', $property_data['floor']);
+            update_post_meta($property_id, '_status', $property_data['status']);
+        }
 
-    public function update_property($id, $data) {
-        $table_name = $this->wpdb->prefix . 'gre_properties';
-        $this->wpdb->update($table_name, $data, array('ID' => $id));
-    }
-
-    public function delete_property($id) {
-        $table_name = $this->wpdb->prefix . 'gre_properties';
-        $this->wpdb->delete($table_name, array('ID' => $id));
-    }
-
-    public function get_property($id) {
-        $table_name = $this->wpdb->prefix . 'gre_properties';
-        return $this->wpdb->get_row($this->wpdb->prepare("SELECT * FROM $table_name WHERE ID = %d", $id));
-    }
-
-    public function get_all_properties() {
-        $table_name = $this->wpdb->prefix . 'gre_properties';
-        return $this->wpdb->get_results("SELECT * FROM $table_name");
+        return $property_id;
     }
 }
+
+?>
