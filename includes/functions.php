@@ -7,3 +7,4 @@ function gre_format_price($price) {
 }
 
 // يمكنك إضافة المزيد من الدوال هنا حسب الحاجة
+?>
