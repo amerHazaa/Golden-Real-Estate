@@ -1,119 +1,26 @@
 <?php
-// ملف إدارة عرض الشقق
 
-class PropertyDisplay {
-    private $wpdb;
+class Property {
+    public function create_property($property_data) {
+        $post_data = [
+            'post_title'    => $property_data['name'],
+            'post_content'  => isset($property_data['description']) ? $property_data['description'] : '',
+            'post_status'   => 'publish',
+            'post_type'     => 'property',
+        ];
 
-    public function __construct() {
-        global $wpdb;
-        $this->wpdb = $wpdb;
+        $property_id = wp_insert_post($post_data);
 
-        add_shortcode('display_properties', array($this, 'display_properties'));
-        add_shortcode('property_details', array($this, 'property_details'));
-    }
-
-    public function display_properties($atts) {
-        $properties = $this->get_all_properties();
-
-        ob_start();
-        echo '<div class="properties-list">';
-        foreach ($properties as $property) {
-            echo '<div class="property">';
-            echo '<h2>' . esc_html($property->name) . '</h2>';
-            echo '<p>' . esc_html($property->city) . ', ' . esc_html($property->district) . '</p>';
-            echo '<p>' . esc_html($property->price) . ' $</p>';
-            echo '<a href="' . get_permalink() . '?property_id=' . $property->ID . '">View Details</a>';
-            echo '</div>';
-        }
-        echo '</div>';
-        return ob_get_clean();
-    }
-
-    public function property_details($atts) {
-        if (!isset($_GET['property_id'])) {
-            return '<p>Property not found.</p>';
+        if (!is_wp_error($property_id)) {
+            update_post_meta($property_id, '_model_id', $property_data['model_id']);
+            update_post_meta($property_id, '_tower_id', $property_data['tower_id']);
+            update_post_meta($property_id, '_property_code', $property_data['property_code']);
+            update_post_meta($property_id, '_floor', $property_data['floor']);
+            update_post_meta($property_id, '_status', $property_data['status']);
         }
 
-        $property_id = intval($_GET['property_id']);
-        $property = $this->get_property($property_id);
-
-        if (!$property) {
-            return '<p>Property not found.</p>';
-        }
-
-        // جلب تفاصيل النموذج المرتبطة بالشقة
-        $model = $this->get_model($property->model_id);
-
-        ob_start();
-        echo '<div class="property-details">';
-        echo '<h1>' . esc_html($property->name) . '</h1>';
-        echo '<p>' . esc_html($property->city) . ', ' . esc_html($property->district) . '</p>';
-        echo '<p>' . esc_html($property->price) . ' $</p>';
-        echo '<p>' . esc_html($property->description) . '</p>';
-        echo '<h2>تفاصيل النموذج</h2>';
-        echo '<p>الاسم: ' . esc_html($model->name) . '</p>';
-        echo '<p>المدينة: ' . esc_html($model->city) . '</p>';
-        echo '<p>الحي: ' . esc_html($model->district) . '</p>';
-        echo '<p>السعر: ' . esc_html($model->price) . ' $</p>';
-        echo '<p>المميزات: ' . esc_html($model->features) . '</p>';
-        echo '<p>الوصف: ' . esc_html($model->description) . '</p>';
-        echo '<div class="property-images">';
-        $images = explode(',', $property->images);
-        foreach ($images as $image) {
-            echo '<img src="' . esc_url($image) . '" alt="' . esc_attr($property->name) . '">';
-        }
-        echo '</div>';
-        echo '</div>';
-        return ob_get_clean();
-    }
-
-    private function get_all_properties() {
-        $table_name = $this->wpdb->prefix . 'gre_properties';
-        return $this->wpdb->get_results("SELECT * FROM $table_name");
-    }
-
-    private function get_property($id) {
-        $table_name = $this->wpdb->prefix . 'gre_properties';
-        return $this->wpdb->get_row($this->wpdb->prepare("SELECT * FROM $table_name WHERE ID = %d", $id));
-    }
-
-    private function get_model($id) {
-        $table_name = $this->wpdb->prefix . 'gre_models';
-        return $this->wpdb->get_row($this->wpdb->prepare("SELECT * FROM $table_name WHERE ID = %d", $id));
-    }
-
-    public function property_details_admin($property_id) {
-        $property = $this->get_property($property_id);
-
-        if (!$property) {
-            return '<p>Property not found.</p>';
-        }
-
-        // جلب تفاصيل النموذج المرتبطة بالشقة
-        $model = $this->get_model($property->model_id);
-
-        ob_start();
-        echo '<div class="property-details">';
-        echo '<h1>' . esc_html($property->name) . '</h1>';
-        echo '<p>' . esc_html($property->city) . ', ' . esc_html($property->district) . '</p>';
-        echo '<p>' . esc_html($property->price) . ' $</p>';
-        echo '<p>' . esc_html($property->description) . '</p>';
-        echo '<h2>تفاصيل النموذج</h2>';
-        echo '<p>الاسم: ' . esc_html($model->name) . '</p>';
-        echo '<p>المدينة: ' . esc_html($model->city) . '</p>';
-        echo '<p>الحي: ' . esc_html($model->district) . '</p>';
-        echo '<p>السعر: ' . esc_html($model->price) . ' $</p>';
-        echo '<p>المميزات: ' . esc_html($model->features) . '</p>';
-        echo '<p>الوصف: ' . esc_html($model->description) . '</p>';
-        echo '<div class="property-images">';
-        $images = explode(',', $property->images);
-        foreach ($images as $image) {
-            echo '<img src="' . esc_url($image) . '" alt="' . esc_attr($property->name) . '">';
-        }
-        echo '</div>';
-        echo '</div>';
-        return ob_get_clean();
+        return $property_id;
     }
 }
 
-new PropertyDisplay();
+?>
