@@ -1,41 +1,27 @@
 <?php
-// ملف إدارة الأكواد البرمجية (Filters & Actions)
+// ملف الهواكات
 
-// فلتر لتعديل عنوان العقار
-function gre_modify_property_title($title, $id) {
-    $post = get_post($id);
-    if ($post->post_type === 'property') {
-        return 'عقار: ' . $title;
+add_action('save_post', 'gre_save_custom_meta_data');
+function gre_save_custom_meta_data($post_id) {
+    // تحقق مما إذا كان يتم الحفظ تلقائيًا
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
     }
-    return $title;
-}
-add_filter('the_title', 'gre_modify_property_title', 10, 2);
 
-// فلتر لتعديل محتوى العقار
-function gre_modify_property_content($content) {
-    if (is_singular('property')) {
-        return 'تفاصيل العقار: ' . $content;
+    // تحقق من صلاحيات المستخدم
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
     }
-    return $content;
-}
-add_filter('the_content', 'gre_modify_property_content');
 
-// إجراء عند حفظ العقار
-function gre_after_save_property($post_id) {
-    $post = get_post($post_id);
-    if ($post->post_type === 'property') {
-        // تنفيذ بعض الإجراءات مثل إرسال إشعار أو تسجيل الحدث في سجل النظام
-        error_log('تم حفظ العقار بالمعرف: ' . $post_id);
+    // تحقق من نوع المقالة
+    if ('property' == $_POST['post_type']) {
+        // حفظ البيانات المخصصة
+        update_post_meta($post_id, '_city', sanitize_text_field($_POST['city']));
+        update_post_meta($post_id, '_district', sanitize_text_field($_POST['district']));
+        update_post_meta($post_id, '_price', floatval($_POST['price']));
+        update_post_meta($post_id, '_features', sanitize_textarea_field($_POST['features']));
+        update_post_meta($post_id, '_videos', sanitize_textarea_field($_POST['videos']));
+        update_post_meta($post_id, '_images', sanitize_textarea_field($_POST['images']));
+        update_post_meta($post_id, '_location', sanitize_text_field($_POST['location']));
     }
 }
-add_action('save_post', 'gre_after_save_property');
-
-// إجراء عند حذف العقار
-function gre_after_delete_property($post_id) {
-    $post = get_post($post_id);
-    if ($post->post_type === 'property') {
-        // تنفيذ بعض الإجراءات مثل إرسال إشعار أو تسجيل الحدث في سجل النظام
-        error_log('تم حذف العقار بالمعرف: ' . $post_id);
-    }
-}
-add_action('before_delete_post', 'gre_after_delete_property');
