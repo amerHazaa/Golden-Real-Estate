@@ -1,16 +1,13 @@
 <?php
-// ملف إدارة عرض الشقق
+// ملف إدارة عرض الشقق والابراج السكنية والنماذج
 
-if (!class_exists('PropertyDisplay')) {
-    class PropertyDisplay {
-        private $wpdb;
-
+if (!class_exists('PublicDisplay')) {
+    class PublicDisplay {
         public function __construct() {
-            global $wpdb;
-            $this->wpdb = $wpdb;
-
             add_shortcode('display_properties', array($this, 'display_properties'));
             add_shortcode('property_details', array($this, 'property_details'));
+            add_shortcode('display_towers', array($this, 'display_towers'));
+            add_shortcode('display_models', array($this, 'display_models'));
         }
 
         public function display_properties($atts) {
@@ -20,10 +17,10 @@ if (!class_exists('PropertyDisplay')) {
             echo '<div class="properties-list">';
             foreach ($properties as $property) {
                 echo '<div class="property">';
-                echo '<h2>' . esc_html($property->name) . '</h2>';
-                echo '<p>' . esc_html($property->city) . ', ' . esc_html($property->district) . '</p>';
-                echo '<p>' . esc_html($property->price) . ' $</p>';
-                echo '<a href="' . get_permalink() . '?property_id=' . $property->ID . '">View Details</a>';
+                echo '<h2>' . esc_html($property->post_title) . '</h2>';
+                echo '<p>' . esc_html(get_post_meta($property->ID, '_city', true)) . ', ' . esc_html(get_post_meta($property->ID, '_district', true)) . '</p>';
+                echo '<p>' . esc_html(get_post_meta($property->ID, '_price', true)) . ' $</p>';
+                echo '<a href="' . get_permalink($property->ID) . '">View Details</a>';
                 echo '</div>';
             }
             echo '</div>';
@@ -36,61 +33,70 @@ if (!class_exists('PropertyDisplay')) {
             }
 
             $property_id = intval($_GET['property_id']);
-            $property = $this->get_property($property_id);
+            $property = get_post($property_id);
 
-            if (!$property) {
+            if (!$property || $property->post_type !== 'property') {
                 return '<p>Property not found.</p>';
             }
 
             ob_start();
             echo '<div class="property-details">';
-            echo '<h1>' . esc_html($property->name) . '</h1>';
-            echo '<p>' . esc_html($property->city) . ', ' . esc_html($property->district) . '</p>';
-            echo '<p>' . esc_html($property->price) . ' $</p>';
-            echo '<p>' . esc_html($property->description) . '</p>';
+            echo '<h1>' . esc_html($property->post_title) . '</h1>';
+            echo '<p>' . esc_html(get_post_meta($property->ID, '_city', true)) . ', ' . esc_html(get_post_meta($property->ID, '_district', true)) . '</p>';
+            echo '<p>' . esc_html(get_post_meta($property->ID, '_price', true)) . ' $</p>';
+            echo '<p>' . esc_html($property->post_content) . '</p>';
             echo '<div class="property-images">';
-            $images = explode(',', $property->images);
+            $images = explode(',', get_post_meta($property->ID, '_images', true));
             foreach ($images as $image) {
-                echo '<img src="' . esc_url($image) . '" alt="' . esc_attr($property->name) . '">';
+                echo '<img src="' . esc_url($image) . '" alt="' . esc_attr($property->post_title) . '">';
             }
             echo '</div>';
+            echo '</div>';
+            return ob_get_clean();
+        }
+
+        public function display_towers($atts) {
+            $towers = get_posts(['post_type' => 'tower', 'posts_per_page' => -1]);
+
+            ob_start();
+            echo '<div class="towers-list">';
+            foreach ($towers as $tower) {
+                echo '<div class="tower">';
+                echo '<h2>' . esc_html($tower->post_title) . '</h2>';
+                echo '<p>' . esc_html(get_post_meta($tower->ID, '_city', true)) . '</p>';
+                echo '<p>' . esc_html(get_post_meta($tower->ID, '_floors', true)) . ' floors</p>';
+                echo '<a href="' . get_permalink($tower->ID) . '">View Details</a>';
+                echo '</div>';
+            }
+            echo '</div>';
+            return ob_get_clean();
+        }
+
+        public function display_models($atts) {
+            $models = get_posts(['post_type' => 'model', 'posts_per_page' => -1]);
+
+            ob_start();
+            echo '<div class="models-list">';
+            foreach ($models as $model) {
+                echo '<div class="model">';
+                echo '<h2>' . esc_html($model->post_title) . '</h2>';
+                echo '<p>' . esc_html(get_post_meta($model->ID, '_room_count', true)) . ' rooms, ' . esc_html(get_post_meta($model->ID, '_bathroom_count', true)) . ' bathrooms</p>';
+                echo '<p>' . esc_html(get_post_meta($model->ID, '_area', true)) . ' sq ft</p>';
+                echo '<a href="' . get_permalink($model->ID) . '">View Details</a>';
+                echo '</div>';
+            }
             echo '</div>';
             return ob_get_clean();
         }
 
         private function get_all_properties() {
-            $table_name = $this->wpdb->prefix . 'gre_properties';
-            return $this->wpdb->get_results("SELECT * FROM $table_name");
-        }
-
-        private function get_property($id) {
-            $table_name = $this->wpdb->prefix . 'gre_properties';
-            return $this->wpdb->get_row($this->wpdb->prepare("SELECT * FROM $table_name WHERE ID = %d", $id));
-        }
-
-        public function property_details_admin($property_id) {
-            $property = $this->get_property($property_id);
-
-            if (!$property) {
-                return '<p>Property not found.</p>';
-            }
-
-            ob_start();
-            echo '<div class="property-details">';
-            echo '<h1>' . esc_html($property->name) . '</h1>';
-            echo '<p>' . esc_html($property->city) . ', ' . esc_html($property->district) . '</p>';
-            echo '<p>' . esc_html($property->price) . ' $</p>';
-            echo '<p>' . esc_html($property->description) . '</p>';
-            echo '<div class="property-images">';
-            $images = explode(',', $property->images);
-            foreach ($images as $image) {
-                echo '<img src="' . esc_url($image) . '" alt="' . esc_attr($property->name) . '">';
-            }
-            echo '</div>';
-            echo '</div>';
-            return ob_get_clean();
+            $args = [
+                'post_type' => 'property',
+                'posts_per_page' => -1
+            ];
+            return get_posts($args);
         }
     }
 
-    new PropertyDisplay();
+    new PublicDisplay();
 }
