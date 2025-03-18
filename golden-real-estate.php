@@ -95,7 +95,7 @@ function gre_insert_demo_data() {
     // تأكد من وجود بيانات تجريبية في جدول النماذج
     $table_name = $wpdb->prefix . 'gre_models';
     if ($wpdb->get_var("SELECT COUNT(*) FROM $table_name") == 0) {
-        $wpdb->insert($table_name, ['name' => 'نموذج تجريبي', 'tower_id' => 1, 'city' => 'المدينة التجريبية', 'district' => 'الحي التجريبي', 'price' => 100000, 'features' => 'ميزات تجريبية', 'description' => 'وصف تجريبي', 'images' => 'صورة1,صورة2', 'videos' => 'فيديو1,فيديو2', 'location' => 'الموقع التجريبي']);
+        $wpdb->insert($table_name, ['name' => 'نموذج تجريبي', 'tower_id' => 1, 'city' => 'المدينة التجريبية', 'district' => 'الحي التجريبي', 'price' => 100000, 'features' => 'مميزات تجريبية', 'description' => 'وصف تجريبي', 'images' => 'image1.jpg,image2.jpg', 'videos' => 'video1.mp4,video2.mp4', 'location' => 'الموقع التجريبي']);
     }
 
     // إضافة البيانات التجريبية للعقارات
