@@ -1,36 +1,30 @@
 <?php
-// ملف إدارة الأبراج السكنية
 
 class Tower {
-    private $wpdb;
+    public function create_tower($tower_data) {
+        $post_data = [
+            'post_title'    => $tower_data['name'],
+            'post_content'  => isset($tower_data['description']) ? $tower_data['description'] : '',
+            'post_status'   => 'publish',
+            'post_type'     => 'tower',
+        ];
 
-    public function __construct() {
-        global $wpdb;
-        $this->wpdb = $wpdb;
-    }
+        $tower_id = wp_insert_post($post_data);
 
-    public function create_tower($data) {
-        $table_name = $this->wpdb->prefix . 'gre_towers';
-        $this->wpdb->insert($table_name, $data);
-    }
+        if (!is_wp_error($tower_id)) {
+            update_post_meta($tower_id, '_location', $tower_data['location']);
+            update_post_meta($tower_id, '_longitude', $tower_data['longitude']);
+            update_post_meta($tower_id, '_latitude', $tower_data['latitude']);
+            update_post_meta($tower_id, '_floors', $tower_data['floors']);
+            update_post_meta($tower_id, '_apartments_per_floor', $tower_data['apartments_per_floor']);
+            update_post_meta($tower_id, '_total_area', $tower_data['total_area']);
+            update_post_meta($tower_id, '_year_built', $tower_data['year_built']);
+            update_post_meta($tower_id, '_status', $tower_data['status']);
+            update_post_meta($tower_id, '_features', $tower_data['features']);
+        }
 
-    public function update_tower($id, $data) {
-        $table_name = $this->wpdb->prefix . 'gre_towers';
-        $this->wpdb->update($table_name, $data, array('ID' => $id));
-    }
-
-    public function delete_tower($id) {
-        $table_name = $this->wpdb->prefix . 'gre_towers';
-        $this->wpdb->delete($table_name, array('ID' => $id));
-    }
-
-    public function get_tower($id) {
-        $table_name = $this->wpdb->prefix . 'gre_towers';
-        return $this->wpdb->get_row($this->wpdb->prepare("SELECT * FROM $table_name WHERE ID = %d", $id));
-    }
-
-    public function get_all_towers() {
-        $table_name = $this->wpdb->prefix . 'gre_towers';
-        return $this->wpdb->get_results("SELECT * FROM $table_name");
+        return $tower_id;
     }
 }
+
+?>
