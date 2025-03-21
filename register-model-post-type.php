@@ -29,7 +29,7 @@ function register_model_post_type() {
         'has_archive'        => true,
         'hierarchical'       => false,
         'menu_position'      => null,
-        'supports'           => array('title', 'editor', 'thumbnail')
+        'supports'           => array('title', 'editor', 'thumbnail', 'custom-fields')
     );
 
     register_post_type('model', $args);

@@ -26,3 +26,5 @@ class PublicDisplay {
         echo '</div>';
     }
 }
+
+?>

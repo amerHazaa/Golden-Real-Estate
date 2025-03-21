@@ -38,6 +38,7 @@ add_action('init', function() {
     $sql = "CREATE TABLE IF NOT EXISTS $table_name (
         ID mediumint(9) NOT NULL AUTO_INCREMENT,
         name tinytext NOT NULL,
+        short_name tinytext NOT NULL,
         location tinytext NOT NULL,
         PRIMARY KEY (ID)
     ) $charset_collate;";
@@ -49,15 +50,14 @@ add_action('init', function() {
     $sql = "CREATE TABLE IF NOT EXISTS $table_name (
         ID mediumint(9) NOT NULL AUTO_INCREMENT,
         name tinytext NOT NULL,
+        short_name tinytext NOT NULL,
         tower_id mediumint(9) NOT NULL,
-        city tinytext NOT NULL,
-        district tinytext NOT NULL,
-        price float NOT NULL,
-        features text NOT NULL,
-        description text NOT NULL,
+        room_count mediumint(9) NOT NULL,
+        bathroom_count mediumint(9) NOT NULL,
+        area float NOT NULL,
+        layout text NOT NULL,
         images text NOT NULL,
-        videos text NOT NULL,
-        location tinytext NOT NULL,
+        details text NOT NULL,
         PRIMARY KEY (ID),
         FOREIGN KEY (tower_id) REFERENCES {$wpdb->prefix}gre_towers(ID) ON DELETE CASCADE
     ) $charset_collate;";
@@ -89,13 +89,13 @@ function gre_insert_demo_data() {
     // تأكد من وجود بيانات تجريبية في جدول الأبراج
     $table_name = $wpdb->prefix . 'gre_towers';
     if ($wpdb->get_var("SELECT COUNT(*) FROM $table_name") == 0) {
-        $wpdb->insert($table_name, ['name' => 'برج تجريبي', 'location' => 'الموقع التجريبي']);
+        $wpdb->insert($table_name, ['name' => 'برج تجريبي', 'short_name' => 'TST', 'location' => 'الموقع التجريبي']);
     }
 
     // تأكد من وجود بيانات تجريبية في جدول النماذج
     $table_name = $wpdb->prefix . 'gre_models';
     if ($wpdb->get_var("SELECT COUNT(*) FROM $table_name") == 0) {
-        $wpdb->insert($table_name, ['name' => 'نموذج تجريبي', 'tower_id' => 1, 'city' => 'المدينة التجريبية', 'district' => 'الحي التجريبي', 'price' => 100000, 'features' => 'مميزات تجريبية', 'description' => 'وصف تجريبي', 'images' => 'image1.jpg,image2.jpg', 'videos' => 'video1.mp4,video2.mp4', 'location' => 'الموقع التجريبي']);
+        $wpdb->insert($table_name, ['name' => 'نموذج تجريبي', 'short_name' => 'M1', 'tower_id' => 1, 'room_count' => 3, 'bathroom_count' => 2, 'area' => 120, 'layout' => 'مخطط تجريبي', 'images' => '', 'details' => 'تفاصيل تجريبية']);
     }
 
     // إضافة البيانات التجريبية للعقارات
@@ -105,7 +105,7 @@ function gre_insert_demo_data() {
             'name' => 'شقة تجريبية 1',
             'model_id' => 1,
             'tower_id' => 1,
-            'property_code' => 'P001',
+            'property_code' => 'TST-M1-1',
             'floor' => 1,
             'status' => 'متاحة'
         ],
@@ -113,7 +113,7 @@ function gre_insert_demo_data() {
             'name' => 'شقة تجريبية 2',
             'model_id' => 1,
             'tower_id' => 1,
-            'property_code' => 'P002',
+            'property_code' => 'TST-M1-2',
             'floor' => 2,
             'status' => 'متاحة'
         ]
@@ -130,5 +130,6 @@ register_uninstall_hook(__FILE__, 'gre_uninstall_plugin');
 function gre_uninstall_plugin() {
     global $wpdb;
     $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}gre_properties");
+    $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}gre_models");
     $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}gre_towers");
 }

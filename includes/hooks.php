@@ -1,5 +1,5 @@
 <?php
-// ملف الهواكات
+// ملف الهوكات
 
 add_action('save_post', 'gre_save_custom_meta_data');
 function gre_save_custom_meta_data($post_id) {
@@ -25,3 +25,5 @@ function gre_save_custom_meta_data($post_id) {
         update_post_meta($post_id, '_location', sanitize_text_field($_POST['location']));
     }
 }
+
+?>
